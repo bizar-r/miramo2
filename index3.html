@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>miramo_pp</title>
+    <style>
+    .area {
+        position: absolute;
+        background: #fff;
+        border: 1px solid #888;
+        border-radius: 3px;
+        font-size: 12px;
+        top: -5px;
+        left: 15px;
+        padding:2px;
+    }
+
+    .info {
+        font-size: 12px;
+        padding: 5px;
+    }
+    .info .title {
+        font-weight: bold;
+        font-size: 17px;
+    }
+    .size {
+      font-size: 15px;
+      text-align: center;
+      width: 150px;
+    }
+    </style>
+</head>
+<body>
+<!-- 지도를 표시할 div 입니다 -->
+<div id="map" style="width:1000px;height:500px;"></div>
+
+<script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=853cfa3006cfaa119e9ba42dac558a78"></script>
+<script>
+
+    // 마커를 표시할 위치와 title 객체 배열입니다
+    var positions = [
+      {
+          title: 'sensor_1',
+          latlng: new kakao.maps.LatLng(37.584627, 127.057776),
+          dust: 10
+      },
+      {
+          title: 'sensor_2',
+          latlng: new kakao.maps.LatLng(37.583810, 127.057583),
+          dust: 16
+      },
+      {
+          title: 'sensor_3',
+          latlng: new kakao.maps.LatLng(37.583266, 127.058323),
+          dust: 19
+      },
+      {
+          title: 'sensor_5',
+          latlng: new kakao.maps.LatLng(37.584108, 127.057647),
+          dust: 8
+      },
+      {
+          title: 'sensor_5',
+          latlng: new kakao.maps.LatLng(37.585358, 127.057454),
+          dust: 29
+      },
+      {
+          title: 'sensor_6',
+          latlng: new kakao.maps.LatLng(37.583768, 127.057476),
+          dust: 30
+      },
+      {
+          title: 'sensor_7',
+          latlng: new kakao.maps.LatLng(37.584066, 127.058849),
+          dust: 15
+      },
+      {
+          title: 'sensor_8',
+          latlng: new kakao.maps.LatLng(37.583748, 127.059413),
+          dust: 15
+      },
+      {
+          title: 'sensor_9',
+          latlng: new kakao.maps.LatLng(37.583487, 127.060006),
+          dust: 22
+      },
+      {
+          title: 'sensor_10',
+          latlng: new kakao.maps.LatLng(37.583880, 127.058259),
+          dust: 18
+      },
+      {
+          title: 'sensor_11',
+          latlng: new kakao.maps.LatLng(37.584207, 127.061149),
+          dust: 14
+      },
+      {
+          title: 'sensor_12',
+          latlng: new kakao.maps.LatLng(37.584658, 127.057690),
+          dust: 9
+      },
+      {
+          title: 'sensor_13',
+          latlng: new kakao.maps.LatLng(37.585352, 127.057515),
+          dust: 7
+      },
+      {
+          title: 'sensor_14',
+          latlng: new kakao.maps.LatLng(37.584616, 127.059391),
+          dust: 12
+      },
+      {
+          title: 'sensor_15',
+          latlng: new kakao.maps.LatLng(37.583956, 127.060180),
+          dust: 17
+      },
+      {
+          title: 'sensor_16',
+          latlng: new kakao.maps.LatLng(37.583623, 127.059847),
+          dust: 22
+      },
+      {
+          title: 'sensor_17',
+          latlng: new kakao.maps.LatLng(37.583685, 127.060846),
+          dust: 29
+      },
+      {
+          title: 'sensor_18',
+          latlng: new kakao.maps.LatLng(37.583796, 127.057524),
+          dust: 5
+      }
+    ];
+
+    var mapContainer = document.getElementById('map'), // 지도를 표시할 div
+        mapOption = {
+            center: new kakao.maps.LatLng(37.583938, 127.058946), // 지도의 중심좌표
+            level: 3 // 지도의 확대 레벨
+        };
+
+    var map = new kakao.maps.Map(mapContainer, mapOption), // 지도를 생성합니다
+        customOverlay = new kakao.maps.CustomOverlay({}),
+        infowindow = new kakao.maps.InfoWindow({removable: true});
+
+    // 일반 지도와 스카이뷰로 지도 타입을 전환할 수 있는 지도타입 컨트롤을 생성합니다
+		var mapTypeControl = new kakao.maps.MapTypeControl();
+
+		// 지도에 컨트롤을 추가해야 지도위에 표시됩니다
+		// kakao.maps.ControlPosition은 컨트롤이 표시될 위치를 정의하는데 TOPRIGHT는 오른쪽 위를 의미합니다
+		map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
+
+		// 지도 확대 축소를 제어할 수 있는  줌 컨트롤을 생성합니다
+		var zoomControl = new kakao.maps.ZoomControl();
+		map.addControl(zoomControl, kakao.maps.ControlPosition.RIGHT);
+
+
+    var imageSrc = ['green.png', 'yellow.png', 'orange.png', 'red.png', 'purple.png'], // 마커이미지의 주소입니다
+        imageContent = ['좋음', '보통', '조금 나쁨', '나쁨', '매우 나쁨']
+        imageSize = new kakao.maps.Size(25, 30), // 마커이미지의 크기입니다
+        imageOption = {offset: new kakao.maps.Point(29, 61)}; // 마커이미지의 옵션입니다. 마커의 좌표와 일치시킬 이미지 안에서의 좌표를 설정합니다.
+
+    // 마커를 생상하고 이벤트를 등록하는 함수입니다
+    function display(position) {
+
+        if (position.dust > 25) {
+          var a = 4
+          var content = '<div class="info">' +
+                      '   <div class="title">' + position.title + '</div>' +
+                      '   <div class="size" style="background-color:purple;">' + position.dust + ' : ' + imageContent[a] + '</area>' +
+                      '</div>'
+        } else if (position.dust > 20) {
+          var a = 3
+          var content = '<div class="info">' +
+                      '   <div class="title">' + position.title + '</div>' +
+                      '   <div class="size" style="background-color:red;">' + position.dust + ' : ' + imageContent[a] + '</area>' +
+                      '</div>'
+        } else if (position.dust > 15) {
+          var a = 2
+          var content = '<div class="info">' +
+                      '   <div class="title">' + position.title + '</div>' +
+                      '   <div class="size" style="background-color:orange;">' + position.dust + ' : ' + imageContent[a] + '</area>' +
+                      '</div>'
+        } else if (position.dust > 10) {
+          var a = 1
+          var content = '<div class="info">' +
+                      '   <div class="title">' + position.title + '</div>' +
+                      '   <div class="size" style="background-color:yellow;">' + position.dust + ' : ' + imageContent[a] + '</area>' +
+                      '</div>'
+        } else {
+          var a = 0
+          var content = '<div class="info">' +
+                      '   <div class="title">' + position.title + '</div>' +
+                      '   <div class="size" style="background-color:green;">' + position.dust + ' : ' + imageContent[a] + '</area>' +
+                      '</div>'
+        };
+
+        // // 마커 이미지를 생성합니다
+        var markerImage = new kakao.maps.MarkerImage(imageSrc[a], imageSize)
+
+        // 마커를 생성합니다
+        var marker = new kakao.maps.Marker({
+            map: map, // 마커를 표시할 지도
+            position: position.latlng, // 마커를 표시할 위치
+            image: markerImage // 마커이미지 설정
+        });
+
+        // 마커를 표시하는 커스텀오버레이를 지도위에 표시합니다
+        kakao.maps.event.addListener(marker, 'mouseover', function() {
+            customOverlay.setContent('<div class="area">' + position.title + '</div>');
+
+            customOverlay.setPosition(position.latlng);
+            customOverlay.setMap(map);
+        });
+
+        // 커스텀 오버레이를 지도에서 제거합니다
+        kakao.maps.event.addListener(marker, 'mouseout', function() {
+            customOverlay.setMap(null);
+        });
+
+        // 마커에 click 이벤트를 등록하고 이벤트가 발생하면 마커의 이름과 내용을 인포윈도우에 표시합니다
+        kakao.maps.event.addListener(marker, 'click', function() {
+            infowindow.setContent(content);
+            infowindow.setPosition(position.latlng);
+            infowindow.setMap(map);
+        });
+    };
+
+    // 지도에 마커를 표시합니다
+    for (var i = 0, len = positions.length; i < len; i++) {
+        display(positions[i]);
+    };
+
+</script>
+</body>
+</html>
